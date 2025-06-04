@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比价工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        success: '#00B42A',
+                        danger: '#F53F3F',
+                        warning: '#FF7D00',
+                        info: '#86909C',
+                        light: '#F2F3F5',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+                    }
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+            }
+            .gradient-success {
+                background: linear-gradient(135deg, #00B42A 0%, #00A854 100%);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header class="gradient-bg text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-balance-scale text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold">比价工具</h1>
+            </div>
+            <nav>
+                <ul class="hidden md:flex space-x-6">
+                    <li><a href="#" class="hover:text-light transition-custom">首页</a></li>
+                    <li><a href="#" class="hover:text-light transition-custom">使用指南</a></li>
+                    <li><a href="#" class="hover:text-light transition-custom">常见问题</a></li>
+                </ul>
+                <button class="md:hidden text-xl">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- 介绍卡片 -->
+        <div class="bg-white rounded-xl shadow-card p-6 mb-8 transform hover:shadow-hover transition-custom">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fa fa-info-circle text-primary mr-2"></i>
+                比价工具介绍
+            </h2>
+            <p class="text-gray-700 mb-4">
+                本工具可帮助您快速对比两个订单的实际价格差异，支持多种优惠类型的计算，包括满减满送、跨店满减、套装优惠等。只需输入订单信息和优惠详情，即可自动计算出最终差价。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div class="bg-light rounded-lg p-4">
+                    <i class="fa fa-check-circle text-success text-xl mb-2"></i>
+                    <h3 class="font-semibold mb-1">自动识别优惠</h3>
+                    <p class="text-sm text-gray-600">系统自动识别有效优惠类型，排除无效输入</p>
+                </div>
+                <div class="bg-light rounded-lg p-4">
+                    <i class="fa fa-calculator text-primary text-xl mb-2"></i>
+                    <h3 class="font-semibold mb-1">精准计算</h3>
+                    <p class="text-sm text-gray-600">按照复杂优惠规则精确计算最终差价</p>
+                </div>
+                <div class="bg-light rounded-lg p-4">
+                    <i class="fa fa-shield text-warning text-xl mb-2"></i>
+                    <h3 class="font-semibold mb-1">政府补贴处理</h3>
+                    <p class="text-sm text-gray-600">智能处理不同订单的政府补贴差异</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 比价表单 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- 原订单表单 -->
+            <div class="bg-white rounded-xl shadow-card p-6 transform hover:shadow-hover transition-custom">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fa fa-file-text-o text-primary mr-2"></i>
+                    原订单信息
+                </h2>
+                <form id="original-order-form" class="space-y-4">
+                    <div class="mb-4">
+                        <label for="original-order-number" class="block text-sm font-medium text-gray-700 mb-1">原订单号</label>
+                        <input type="text" id="original-order-number" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入原订单号（选填）">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="original-product-price" class="block text-sm font-medium text-gray-700 mb-1">商品金额</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fa fa-rmb"></i>
+                            </span>
+                            <input type="number" id="original-product-price" class="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入商品金额" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="original-government-subsidy" class="block text-sm font-medium text-gray-700 mb-1">政府补贴金额 （系统内展示补贴金额输入在这，不输入到底下的优惠信息中）</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fa fa-rmb"></i>
+                            </span>
+                            <input type="number" id="original-government-subsidy" class="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入政府补贴金额" value="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="original-discounts-text" class="block text-sm text-red-500 font-bold mb-1">优惠信息（复制企业门户内对应优惠项目名称和金额粘贴即可，空格换行输入下一项）</label>
+                        <label for="comparison-discounts-text" class="block text-sm text-red-500 font-bold mb-1">特殊类型（订单改价-减少）该优惠只算入原订单位置，且带有的-号需清除掉</label>
+                        <div class="relative">
+                            <textarea id="original-discounts-text" rows="4" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入优惠信息，格式如：联合优惠券	20.00&#10;官方立减	18.00"></textarea>
+                            <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                                <button type="button" id="show-original-valid-discounts" class="text-primary hover:underline">查看有效优惠类型</button>
+                            </div>
+                        </div>
+                        <div id="original-discounts-preview" class="mt-2 hidden">
+                            <div class="text-sm font-medium text-gray-700 mb-1">有效优惠：</div>
+                            <div id="original-valid-discounts" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                            <div id="original-invalid-discounts" class="space-y-1 mt-2"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="original-price-guarantee" class="block text-sm font-medium text-gray-700 mb-1">线上已申请价保金额（需输入正数，每行一个金额，不要带有 - 号）</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fa fa-rmb"></i>
+                            </span>
+                            <textarea id="original-price-guarantee" rows="4" class="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入价保金额，每行一个金额"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 比价订单表单 -->
+            <div class="bg-white rounded-xl shadow-card p-6 transform hover:shadow-hover transition-custom">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fa fa-exchange text-secondary mr-2"></i>
+                    比价订单信息
+                </h2>
+                <form id="comparison-order-form" class="space-y-4">
+                    <div class="mb-4">
+                        <label for="comparison-order-number" class="block text-sm font-medium text-gray-700 mb-1">比价订单号</label>
+                        <input type="text" id="comparison-order-number" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入比价订单号（选填）">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="comparison-product-price" class="block text-sm font-medium text-gray-700 mb-1">商品金额</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fa fa-rmb"></i>
+                            </span>
+                            <input type="number" id="comparison-product-price" class="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入商品金额" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="comparison-government-subsidy" class="block text-sm font-medium text-gray-700 mb-1">政府补贴金额 （系统内展示补贴金额输入在这，不输入到底下的优惠信息中）</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                <i class="fa fa-rmb"></i>
+                            </span>
+                            <input type="number" id="comparison-government-subsidy" class="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入政府补贴金额" value="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="comparison-discounts-text" class="block text-sm text-red-500 font-bold mb-1">优惠信息（复制企业门户内对应优惠项目名称和金额粘贴即可，空格换行输入下一项）</label>
+                        <label for="comparison-discounts-text" class="block text-sm text-red-500 font-bold mb-1">请勿输入该优惠类型影响最终计算金额：（订单改价-减少）</label>
+                        <div class="relative">
+                            <textarea id="comparison-discounts-text" rows="4" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-custom" placeholder="请输入优惠信息，格式如：联合优惠券	20.00&#10;官方立减	18.00"></textarea>
+                            <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                                <button type="button" id="show-comparison-valid-discounts" class="text-primary hover:underline">查看有效优惠类型</button>
+                            </div>
+                        </div>
+                        <div id="comparison-discounts-preview" class="mt-2 hidden">
+                            <div class="text-sm font-medium text-gray-700 mb-1">有效优惠：</div>
+                            <div id="comparison-valid-discounts" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                            <div id="comparison-invalid-discounts" class="space-y-1 mt-2"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 计算按钮 -->
+        <div class="text-center mb-8 flex justify-center space-x-4">
+            <button id="calculate-btn" class="gradient-bg text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-custom font-medium text-lg flex items-center">
+                <i class="fa fa-calculator mr-2"></i> 开始比价
+            </button>
+            <button id="reset-btn" class="gradient-success text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-custom font-medium text-lg flex items-center">
+                <i class="fa fa-refresh mr-2"></i> 重置
+            </button>
+        </div>
+        
+        <!-- 结果展示 -->
+        <div id="result-section" class="hidden">
+            <div class="bg-white rounded-xl shadow-card p-6 mb-8 transform hover:shadow-hover transition-custom">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i>
+                    比价结果
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- 原订单结果 -->
+                    <div class="bg-light rounded-lg p-4">
+                        <h3 class="font-semibold mb-3 text-primary flex items-center">
+                            <i class="fa fa-file-text-o mr-2"></i>
+                            原订单 <span id="original-order-number-display" class="ml-2 text-sm font-normal text-gray-500"></span>
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">商品金额:</span>
+                                <span id="original-product-price-display" class="font-medium"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">政府补贴金额:</span>
+                                <span id="original-subsidy-display" class="font-medium"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">优惠总金额:</span>
+                                <span id="original-discount-total-display" class="font-medium"></span>
+                            </div>
+                            <div class="border-t border-gray-200 my-2 pt-2">
+                                <div class="flex justify-between">
+                                    <span class="font-semibold">原订单可比价金额:</span>
+                                    <span id="original-comparable-price-display" class="font-bold text-lg"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 比价订单结果 -->
+                    <div class="bg-light rounded-lg p-4">
+                        <h3 class="font-semibold mb-3 text-secondary flex items-center">
+                            <i class="fa fa-exchange mr-2"></i>
+                            比价订单 <span id="comparison-order-number-display" class="ml-2 text-sm font-normal text-gray-500"></span>
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">商品金额:</span>
+                                <span id="comparison-product-price-display" class="font-medium"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">政府补贴金额:</span>
+                                <span id="comparison-subsidy-display" class="font-medium"></span>
+                            </div>
+                            <div class="flex justify-between" id="comparison-calculated-subsidy-container">
+                                <span class="text-gray-600">系统计算政府补贴:</span>
+                                <span id="comparison-calculated-subsidy-display" class="font-medium"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">优惠总金额:</span>
+                                <span id="comparison-discount-total-display" class="font-medium"></span>
+                            </div>
+                            <div class="border-t border-gray-200 my-2 pt-2">
+                                <div class="flex justify-between">
+                                    <span class="font-semibold">比价订单可比价金额:</span>
+                                    <span id="comparison-comparable-price-display" class="font-bold text-lg"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 差价结果 -->
+                <div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6 text-center">
+                    <h3 class="text-xl font-bold mb-2">差价分析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-gray-600 mb-1">基础差价</p>
+                            <p id="base-price-difference-display" class="text-2xl font-bold"></p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-gray-600 mb-1">（原单线上申请+线下已登记过）价保金额</p>
+                            <p id="price-guarantee-display" class="text-2xl font-bold"></p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-gray-600 mb-1">最终差价</p>
+                            <p id="final-price-difference-display" class="text-2xl font-bold"></p>
+                        </div>
+                    </div>
+                    
+                    <div id="price-comparison-result" class="py-4 rounded-lg font-bold text-xl"></div>
+                </div>
+            </div>
+            
+            <!-- 优惠明细 -->
+            <div class="bg-white rounded-xl shadow-card p-6 mb-8 transform hover:shadow-hover transition-custom">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fa fa-list-ul text-primary mr-2"></i>
+                    优惠明细
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 原订单优惠明细 -->
+                    <div>
+                        <h3 class="font-semibold mb-3 text-primary flex items-center">
+                            <i class="fa fa-file-text-o mr-2"></i>
+                            原订单优惠
+                        </h3>
+                        <div id="original-discount-details" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                            <!-- 优惠明细将在这里动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 比价订单优惠明细 -->
+                    <div>
+                        <h3 class="font-semibold mb-3 text-secondary flex items-center">
+                            <i class="fa fa-exchange mr-2"></i>
+                            比价订单优惠
+                        </h3>
+                        <div id="comparison-discount-details" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                            <!-- 优惠明细将在这里动态生成 -->
+                        </div>
+                        <div id="discount-type-warning" class="mt-4 p-3 bg-warning/20 rounded-lg border border-warning/30 hidden">
+                            <i class="fa fa-exclamation-triangle text-warning mr-2"></i>
+                            <span>注意：比价订单中存在原订单未使用的优惠类型，请确认这些优惠券的可用时间是否在原订单下单时间之前。</span>
+                            <ul id="unique-discount-types" class="mt-2 list-disc list-inside text-sm"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">比价工具</h3>
+                    <p class="text-gray-400 text-sm">
+                        创建本工具旨在帮助大家快速准确地对比不同订单的价格差异，不做他用。
+                    </p>
+                </div>
+                <div>
+
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">联系方式</h3>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li class="flex items-center"><i class="fa fa-envelope-o mr-2"></i> erp：zhuweixun1</li>
+                        <li class="flex items-center"><i class="fa fa-envelope-o mr-2"></i> 邮箱：zhuweixun1@jd.com</li>
+                        <li class="flex items-center"><i class="fa fa-phone mr-2"></i> 电话：18996494939</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
+                <p>&copy; 版权所有·商家线客服部朱唯迅</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 有效优惠类型模态框 -->
+    <div id="valid-discounts-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">有效优惠类型列表</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-2 max-h-80 overflow-y-auto">
+                <!-- 有效优惠类型将在这里动态生成 -->
+            </div>
+            <div class="mt-4 text-center">
+                <button id="confirm-modal" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-custom">
+                    确认
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 优惠类型列表
+        const discountTypes = [
+            "满减满送", "跨店满减", "套装优惠", "单品促销", "团购优惠", 
+            "满赠满返促销优惠", "plus会员95折优惠", "全品类东券", "店铺东券", "限品类东券", 
+            "店铺限商品东券", "自营商家联合按比例承担优惠劵", "联合优惠券", "店铺京券", 
+            "限品类京券", "限SKU礼金", "返现", "送京豆", 
+            "返红包", "返京券", "膨胀金优惠", "PLUS会员专享立减", "店铺首购礼金", 
+            "普通东券", "官方立减", "单品折扣", "国家以旧换新补贴","订单改价-减少", "政府补贴（含国补、云闪付国补等）"
+        ];
+        
+        // DOM 加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化有效优惠类型模态框
+            const modalContent = document.querySelector('#valid-discounts-modal > div > div:nth-child(2)');
+            discountTypes.forEach(type => {
+                const item = document.createElement('div');
+                item.className = "p-2 bg-light rounded hover:bg-gray-200 transition-custom";
+                item.textContent = type;
+                modalContent.appendChild(item);
+            });
+            
+            // 显示原订单有效优惠类型
+            document.getElementById('show-original-valid-discounts').addEventListener('click', function() {
+                document.getElementById('valid-discounts-modal').classList.remove('hidden');
+            });
+            
+            // 显示比价订单有效优惠类型
+            document.getElementById('show-comparison-valid-discounts').addEventListener('click', function() {
+                document.getElementById('valid-discounts-modal').classList.remove('hidden');
+            });
+            
+            // 关闭模态框
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('valid-discounts-modal').classList.add('hidden');
+            });
+            
+            // 确认并关闭模态框
+            document.getElementById('confirm-modal').addEventListener('click', function() {
+                document.getElementById('valid-discounts-modal').classList.add('hidden');
+            });
+            
+            // 点击模态框外部关闭
+            document.getElementById('valid-discounts-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            // 监听优惠信息文本框变化，实时解析
+            const originalDiscountsText = document.getElementById('original-discounts-text');
+            const comparisonDiscountsText = document.getElementById('comparison-discounts-text');
+            
+            originalDiscountsText.addEventListener('input', function() {
+                parseDiscountsText('original', this.value);
+            });
+            
+            comparisonDiscountsText.addEventListener('input', function() {
+                parseDiscountsText('comparison', this.value);
+            });
+            
+            // 初始解析
+            parseDiscountsText('original', originalDiscountsText.value);
+            parseDiscountsText('comparison', comparisonDiscountsText.value);
+            
+            // 计算按钮事件
+            document.getElementById('calculate-btn').addEventListener('click', calculatePriceComparison);
+
+            // 重置按钮事件
+            document.getElementById('reset-btn').addEventListener('click', function() {
+                // 重置原订单表单
+                document.getElementById('original-order-number').value = '';
+                document.getElementById('original-product-price').value = '';
+                document.getElementById('original-government-subsidy').value = 0;
+                document.getElementById('original-discounts-text').value = '';
+                // 修改此处，清空 textarea 内容
+                document.getElementById('original-price-guarantee').value = '';
+
+                // 重置比价订单表单
+                document.getElementById('comparison-order-number').value = '';
+                document.getElementById('comparison-product-price').value = '';
+                document.getElementById('comparison-government-subsidy').value = 0;
+                document.getElementById('comparison-discounts-text').value = '';
+
+                // 隐藏结果区域
+                document.getElementById('result-section').classList.add('hidden');
+
+                // 隐藏原订单和比价订单的优惠预览
+                document.getElementById('original-discounts-preview').classList.add('hidden');
+                document.getElementById('comparison-discounts-preview').classList.add('hidden');
+
+                // 清空原订单和比价订单的有效和无效优惠列表
+                document.getElementById('original-valid-discounts').innerHTML = '';
+                document.getElementById('original-invalid-discounts').innerHTML = '';
+                document.getElementById('comparison-valid-discounts').innerHTML = '';
+                document.getElementById('comparison-invalid-discounts').innerHTML = '';
+            });
+        });
+        
+        // 解析优惠信息文本
+        function parseDiscountsText(orderType, text) {
+            const lines = text.trim().split('\n');
+            const validDiscounts = [];
+            const invalidDiscounts = [];
+            
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                // 处理编号+优惠类型的情况，提取出真正的优惠类型
+                let cleanedLine = line;
+                // 改进的正则表达式，可以处理更复杂的前缀格式
+                const regex = /^([a-zA-Z0-9]+|.*?券明细)(\s+)(.*)$/;
+                const match = cleanedLine.match(regex);
+                if (match && match[3]) {
+                    cleanedLine = match[3];
+                }
+                
+                // 尝试分割优惠类型和金额
+                const parts = cleanedLine.split(/\t|\s+/);
+                if (parts.length < 2) {
+                    invalidDiscounts.push({ line, error: '格式错误，需包含优惠类型和金额' });
+                    return;
+                }
+                
+                const type = parts[0].trim();
+                const amountStr = parts[1].trim();
+                const amount = parseFloat(amountStr);
+                
+                if (isNaN(amount)) {
+                    invalidDiscounts.push({ line, error: '金额格式不正确' });
+                    return;
+                }
+                
+                // 特殊处理"订单改价-减少"优惠类型
+                if (type === "订单改价-减少") {
+                    if (orderType === "comparison") {
+                        invalidDiscounts.push({ line, error: '比价订单中不应包含"订单改价-减少"优惠' });
+                        return;
+                    }
+                } else if (!discountTypes.includes(type)) {
+                    invalidDiscounts.push({ line, error: '无效的优惠类型' });
+                    return;
+                }
+                
+                validDiscounts.push({ type, amount });
+            });
+            
+            // 显示解析结果
+            const previewContainer = document.getElementById(`${orderType}-discounts-preview`);
+            const validContainer = document.getElementById(`${orderType}-valid-discounts`);
+            const invalidContainer = document.getElementById(`${orderType}-invalid-discounts`);
+            
+            // 清空之前的结果
+            validContainer.innerHTML = '';
+            invalidContainer.innerHTML = '';
+            
+            // 显示有效优惠
+            if (validDiscounts.length > 0) {
+                validDiscounts.forEach(discount => {
+                    const item = document.createElement('div');
+                    item.className = "flex justify-between items-center p-2 bg-success/10 rounded text-success";
+                    item.innerHTML = `
+                        <span>${discount.type}</span>
+                        <span>¥${discount.amount.toFixed(2)}</span>
+                    `;
+                    validContainer.appendChild(item);
+                });
+            } else {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = "p-2 bg-gray-100 rounded text-gray-500 italic";
+                emptyItem.textContent = "无有效优惠";
+                validContainer.appendChild(emptyItem);
+            }
+            
+            // 显示无效优惠
+            if (invalidDiscounts.length > 0) {
+                invalidDiscounts.forEach(item => {
+                    const discountItem = document.createElement('div');
+                    discountItem.className = "flex justify-between items-center p-2 bg-danger/10 rounded text-danger";
+                    discountItem.innerHTML = `
+                        <span>${item.line}</span>
+                        <span class="text-xs">${item.error}</span>
+                    `;
+                    invalidContainer.appendChild(discountItem);
+                });
+                
+                // 显示解析结果
+                previewContainer.classList.remove('hidden');
+            } else {
+                // 如果没有无效优惠且有有效优惠，延迟显示结果
+                if (validDiscounts.length > 0) {
+                    setTimeout(() => {
+                        previewContainer.classList.remove('hidden');
+                    }, 500);
+                } else {
+                    previewContainer.classList.add('hidden');
+                }
+            }
+            
+            return validDiscounts;
+        }
+        
+        // 辅助函数：计算多行价保金额的总和
+        function calculateTotalPriceGuarantee() {
+            const textarea = document.getElementById('original-price-guarantee');
+            const lines = textarea.value.split('\n');
+            let total = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const amount = parseFloat(lines[i]);
+                if (!isNaN(amount)) {
+                    total += amount;
+                }
+            }
+            return total;
+        }
+        
+        // 计算比价结果
+        function calculatePriceComparison() {
+            // 获取表单数据
+            const originalProductPrice = parseFloat(document.getElementById('original-product-price').value) || 0;
+            const originalGovernmentSubsidy = parseFloat(document.getElementById('original-government-subsidy').value) || 0;
+            // 修改此处，调用辅助函数计算总金额
+            const originalPriceGuarantee = calculateTotalPriceGuarantee();
+            const originalOrderNumber = document.getElementById('original-order-number').value.trim();
+            
+            const comparisonProductPrice = parseFloat(document.getElementById('comparison-product-price').value) || 0;
+            const comparisonGovernmentSubsidy = parseFloat(document.getElementById('comparison-government-subsidy').value) || 0;
+            const comparisonOrderNumber = document.getElementById('comparison-order-number').value.trim();
+            
+            // 验证必填字段
+            if (!originalProductPrice || !comparisonProductPrice) {
+                alert('请填写原订单和比价订单的商品金额');
+                return;
+            }
+            
+            // 检查政府补贴金额情况
+            if (originalGovernmentSubsidy === 0 && comparisonGovernmentSubsidy > 0 || originalGovernmentSubsidy < comparisonGovernmentSubsidy) {
+                alert('原单无政府补贴，比价单有或原单政府补贴小于比价单政府补贴，请排除政府补贴金额计算其他差额。');
+                return;
+            }
+            
+            // 解析优惠信息
+            const originalDiscountsText = document.getElementById('original-discounts-text').value;
+            const comparisonDiscountsText = document.getElementById('comparison-discounts-text').value;
+            
+            const originalDiscounts = parseDiscountsText('original', originalDiscountsText);
+            const comparisonDiscounts = parseDiscountsText('comparison', comparisonDiscountsText);
+            
+            // 检查比价订单的优惠类型是否在原订单中未使用
+            checkUniqueDiscountTypes(originalDiscounts, comparisonDiscounts);
+            
+            // 计算优惠总金额
+            const originalDiscountTotal = originalDiscounts.reduce((total, discount) => total + discount.amount, 0);
+            const comparisonDiscountTotal = comparisonDiscounts.reduce((total, discount) => total + discount.amount, 0);
+            
+            // 计算可比价金额
+            let originalComparablePrice = originalProductPrice - originalDiscountTotal;
+            let comparisonComparablePrice = comparisonProductPrice - comparisonDiscountTotal;
+            
+            // 政府补贴处理
+            let adjustedOriginalSubsidy = originalGovernmentSubsidy;
+            let adjustedComparisonSubsidy = comparisonGovernmentSubsidy;
+            let calculatedComparisonSubsidy = 0;
+            let showCalculatedSubsidy = false;
+            
+            // 处理政府补贴的特殊情况
+            if (comparisonGovernmentSubsidy > originalGovernmentSubsidy) {
+                // 比价单政府补贴大于原单
+                adjustedComparisonSubsidy = comparisonGovernmentSubsidy - originalGovernmentSubsidy;
+                calculatedComparisonSubsidy = adjustedComparisonSubsidy;
+                showCalculatedSubsidy = true;
+            } else if (originalGovernmentSubsidy > 0 && comparisonGovernmentSubsidy === 0) {
+                // 原单有政府补贴，比价单没有
+                const originalFinalComparableAmount = originalComparablePrice - originalGovernmentSubsidy;
+                // 使用新公式计算系统计算政府补贴金额
+                calculatedComparisonSubsidy = (originalGovernmentSubsidy / (originalGovernmentSubsidy + originalFinalComparableAmount)) * comparisonComparablePrice;
+                adjustedComparisonSubsidy = calculatedComparisonSubsidy;
+                showCalculatedSubsidy = true;
+            }
+            
+            // 应用政府补贴
+            originalComparablePrice -= adjustedOriginalSubsidy;
+            comparisonComparablePrice -= adjustedComparisonSubsidy;
+            
+            // 检查是否两者可比价金额均为负数
+            if (originalComparablePrice < 0 && comparisonComparablePrice < 0) {
+                alert('输入有误，原单和比价单可比价金额均为负数，不支持比价');
+                return;
+            }
+            
+            // 计算差价
+            const basePriceDifference = originalComparablePrice - comparisonComparablePrice;
+            const finalPriceDifference = basePriceDifference - originalPriceGuarantee;
+            
+            // 显示结果
+            document.getElementById('result-section').classList.remove('hidden');
+            
+            // 显示订单信息
+            document.getElementById('original-order-number-display').textContent = originalOrderNumber || '(未填写)';
+            document.getElementById('comparison-order-number-display').textContent = comparisonOrderNumber || '(未填写)';
+            
+            // 显示原订单详情
+            document.getElementById('original-product-price-display').textContent = `¥${originalProductPrice.toFixed(2)}`;
+            document.getElementById('original-subsidy-display').textContent = `¥${originalGovernmentSubsidy.toFixed(2)}`;
+            document.getElementById('original-discount-total-display').textContent = `¥${originalDiscountTotal.toFixed(2)}`;
+            document.getElementById('original-comparable-price-display').textContent = `¥${originalComparablePrice.toFixed(2)}`;
+            
+            // 显示比价订单详情
+            document.getElementById('comparison-product-price-display').textContent = `¥${comparisonProductPrice.toFixed(2)}`;
+            document.getElementById('comparison-subsidy-display').textContent = `¥${comparisonGovernmentSubsidy.toFixed(2)}`;
+            document.getElementById('comparison-discount-total-display').textContent = `¥${comparisonDiscountTotal.toFixed(2)}`;
+            document.getElementById('comparison-comparable-price-display').textContent = `¥${comparisonComparablePrice.toFixed(2)}`;
+            
+            // 显示计算的政府补贴
+            if (showCalculatedSubsidy) {
+                document.getElementById('comparison-calculated-subsidy-container').classList.remove('hidden');
+                document.getElementById('comparison-calculated-subsidy-display').textContent = `¥${calculatedComparisonSubsidy.toFixed(2)}`;
+            } else {
+                document.getElementById('comparison-calculated-subsidy-container').classList.add('hidden');
+            }
+            
+            // 显示差价分析
+            document.getElementById('base-price-difference-display').textContent = formatPriceDifference(basePriceDifference);
+            document.getElementById('price-guarantee-display').textContent = `¥${originalPriceGuarantee.toFixed(2)}`;
+            document.getElementById('final-price-difference-display').textContent = formatPriceDifference(finalPriceDifference);
+            
+            // 显示最终结论
+            const resultElement = document.getElementById('price-comparison-result');
+            if (finalPriceDifference > 0) {
+                resultElement.className = "py-4 rounded-lg font-bold text-xl bg-success/20 text-success";
+                resultElement.textContent = `比价订单更优惠，可线下登记 ¥${finalPriceDifference.toFixed(2)}`;
+            } else if (finalPriceDifference < 0) {
+                resultElement.className = "py-4 rounded-lg font-bold text-xl bg-danger/20 text-danger";
+                resultElement.textContent = `原订单更优惠，优惠 ¥${Math.abs(finalPriceDifference).toFixed(2)}不可登记打款`;
+            } else {
+                resultElement.className = "py-4 rounded-lg font-bold text-xl bg-info/20 text-info";
+                resultElement.textContent = "两个订单价格相同";
+            }
+            
+            // 显示优惠明细
+            displayDiscountDetails('original', originalDiscounts);
+            displayDiscountDetails('comparison', comparisonDiscounts);
+            
+            // 滚动到结果区域
+            document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 检查比价订单的优惠类型是否在原订单中未使用
+        function checkUniqueDiscountTypes(originalDiscounts, comparisonDiscounts) {
+            const originalTypes = new Set(originalDiscounts.map(discount => discount.type));
+            const comparisonTypes = new Set(comparisonDiscounts.map(discount => discount.type));
+            const uniqueTypes = [];
+            
+            comparisonTypes.forEach(type => {
+                if (!originalTypes.has(type)) {
+                    uniqueTypes.push(type);
+                }
+            });
+            
+            const warningElement = document.getElementById('discount-type-warning');
+            const uniqueTypesList = document.getElementById('unique-discount-types');
+            
+            // 清空之前的列表
+            uniqueTypesList.innerHTML = '';
+            
+            if (uniqueTypes.length > 0) {
+                // 显示警告信息
+                warningElement.classList.remove('hidden');
+                
+                // 添加唯一优惠类型列表
+                uniqueTypes.forEach(type => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = type;
+                    uniqueTypesList.appendChild(listItem);
+                });
+            } else {
+                // 隐藏警告信息
+                warningElement.classList.add('hidden');
+            }
+        }
+        
+        // 格式化价格差异显示
+        function formatPriceDifference(priceDifference) {
+            if (priceDifference > 0) {
+                return `+¥${priceDifference.toFixed(2)}`;
+            } else if (priceDifference < 0) {
+                return `-¥${Math.abs(priceDifference).toFixed(2)}`;
+            } else {
+                return `¥0.00`;
+            }
+        }
+        
+        // 显示优惠明细
+        function displayDiscountDetails(orderType, discounts) {
+            const container = document.getElementById(`${orderType}-discount-details`);
+            container.innerHTML = '';
+            
+            if (discounts.length === 0) {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = "p-2 bg-gray-100 rounded text-gray-500 italic text-center";
+                emptyItem.textContent = "无优惠信息";
+                container.appendChild(emptyItem);
+                return;
+            }
+            
+            discounts.forEach(discount => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center p-2 border-b border-gray-200";
+                item.innerHTML = `
+                    <span>${discount.type}</span>
+                    <span class="font-medium">¥${discount.amount.toFixed(2)}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
+    

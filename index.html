@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-custom {
+                background-image: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center font-inter">
+    <div class="relative w-full">
+        <!-- 背景装饰 -->
+        <div class="absolute inset-0 overflow-hidden -z-10">
+            <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full -mr-40 -mt-40 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-secondary/10 rounded-full -ml-40 -mb-40 blur-3xl"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 py-8 max-w-md">
+            <!-- 品牌标识 -->
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-custom text-white mb-4">
+                    <i class="fa fa-shield text-2xl"></i>
+                </div>
+                <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-dark text-shadow">商家管理平台</h1>
+                <p class="text-gray-500 mt-2">安全访问您的专属工具</p>
+            </div>
+            
+            <!-- 登录卡片 -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-center mb-2">身份验证</h2>
+                    <p class="text-gray-500 text-center">请输入您的访问密码</p>
+                </div>
+                
+                <form id="loginForm" class="space-y-4">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" id="password" name="password" placeholder="输入您的密码" 
+                            class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                            required>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center space-x-2">
+                        <i class="fa fa-sign-in"></i>
+                        <span>登录</span>
+                    </button>
+                </form>
+                
+                <!-- 错误提示 -->
+                <div id="errorMessage" class="mt-4 hidden">
+                    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fa fa-exclamation-circle mr-2"></i>
+                            <span>密码错误，请重试</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 页脚 -->
+            <div class="mt-8 text-center text-gray-500 text-sm">
+                <p>© 2025 商家管理平台 | 安全访问</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            // 验证密码（示例密码为35711）
+            if (password === '35711') {
+                window.location.href = 'home.html';
+            } else {
+                // 显示错误消息
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.classList.remove('hidden');
+                
+                // 添加抖动动画
+                const loginCard = errorMessage.parentElement;
+                loginCard.classList.add('animate-shake');
+                setTimeout(() => {
+                    loginCard.classList.remove('animate-shake');
+                }, 500);
+                
+                // 3秒后隐藏错误消息
+                setTimeout(() => {
+                    errorMessage.classList.add('hidden');
+                }, 3000);
+            }
+        });
+        
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>    

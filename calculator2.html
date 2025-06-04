@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商家ID批量处理工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#4080FF',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            dark: '#1D2129',
+            'gray-light': '#F2F3F5',
+            'gray-medium': '#C9CDD4',
+            'gray-dark': '#86909C'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      .animate-slide-up {
+        animation: slideUp 0.3s ease-out;
+      }
+      .animate-pulse-slow {
+        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      .shadow-card {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      }
+      .gradient-bg {
+        background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+      }
+      .input-focus {
+        transition: all 0.3s ease;
+      }
+      .input-focus:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-inter min-h-screen flex flex-col">
+  <!-- 顶部导航栏 -->
+  <header class="gradient-bg shadow-md sticky top-0 z-10 text-white">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-table text-2xl"></i>
+        <h1 class="text-xl font-bold">商家ID批量处理工具</h1>
+      </div>
+      <div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-white/20 transition-colors">
+          <i class="fa fa-moon-o"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="flex-1 container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- 功能介绍卡片 -->
+      <div class="bg-white rounded-xl shadow-card p-6 mb-8 animate-fade-in">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold text-dark">商家ID批量处理与Excel导出</h2>
+          <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm animate-pulse-slow">
+            <i class="fa fa-bolt mr-1"></i> 高效处理
+          </span>
+        </div>
+        <p class="text-gray-dark mb-4">
+          输入多个保险险种和一组商家ID，系统将为每个商家ID生成与所有险种的组合，
+          并导出包含保险险种、保险子险种、停约客户类型、停约客户编码、商家来源的Excel表格。
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <span class="bg-blue-50 text-primary px-3 py-1 rounded-full text-sm"><i class="fa fa-th-large mr-1"></i> 批量处理</span>
+          <span class="bg-blue-50 text-primary px-3 py-1 rounded-full text-sm"><i class="fa fa-cubes mr-1"></i> 组合生成</span>
+          <span class="bg-blue-50 text-primary px-3 py-1 rounded-full text-sm"><i class="fa fa-clipboard mr-1"></i> 一键复制</span>
+          <span class="bg-blue-50 text-primary px-3 py-1 rounded-full text-sm"><i class="fa fa-file-excel-o mr-1"></i> Excel导出</span>
+        </div>
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="bg-white rounded-xl shadow-card p-6 mb-8 animate-slide-up">
+        <!-- 保险险种部分 -->
+        <div class="mb-8">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-sm font-medium text-dark">保险险种列表</label>
+            <div class="flex items-center space-x-2">
+              <span id="insurance-count" class="text-sm text-gray-dark">0 个保险险种</span>
+              <button 
+                id="add-insurance-btn" 
+                class="bg-secondary hover:bg-secondary/90 text-white px-3 py-1 rounded-lg transition-colors text-sm flex items-center"
+              >
+                <i class="fa fa-plus mr-1"></i> 添加
+              </button>
+            </div>
+          </div>
+          <div id="insurance-container" class="space-y-3">
+            <div class="insurance-item flex items-center">
+              <input 
+                type="text" 
+                class="insurance-type flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 input-focus"
+                placeholder="请输入保险险种ID..."
+              >
+              <button class="remove-insurance ml-2 text-gray-dark hover:text-danger transition-colors hidden">
+                <i class="fa fa-times-circle"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 商家ID部分 -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <label for="shop-ids" class="block text-sm font-medium text-dark">商家ID列表（每行一个ID）</label>
+            <span id="id-count" class="text-sm text-gray-dark">0 个商家ID</span>
+          </div>
+          <textarea 
+            id="shop-ids" 
+            class="w-full h-32 p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none input-focus"
+            placeholder="请粘贴商家ID列表，每行一个ID..."></textarea>
+          <button 
+            id="extract-shop-ids-btn" 
+            class="bg-secondary hover:bg-secondary/90 text-white px-6 py-2 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mt-2"
+          >
+            <i class="fa fa-search mr-2"></i> 提取商家ID
+          </button>
+        </div>
+        
+        <div class="flex justify-between items-center">
+          <div class="text-sm text-gray-dark">
+            <span id="total-count" class="text-primary font-medium">0</span> 个组合将被生成
+          </div>
+          <div class="flex space-x-3">
+            <button 
+              id="clear-btn" 
+              class="bg-success hover:bg-success/90 text-white px-6 py-2 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <i class="fa fa-refresh mr-2"></i> 清除
+            </button>
+            <button 
+              id="process-btn" 
+              class="gradient-bg hover:opacity-90 text-white px-6 py-2 rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <i class="fa fa-cogs mr-2"></i> 生成数据
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 结果区域 -->
+      <div id="result-section" class="bg-white rounded-xl shadow-card p-6 mb-8 hidden animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold text-dark">处理结果</h3>
+          <div class="flex space-x-2">
+            <button id="copy-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-dark px-4 py-2 rounded-lg transition-colors flex items-center hover:shadow-md">
+              <i class="fa fa-copy mr-1"></i> 复制结果
+            </button>
+            <button id="download-btn" class="bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg transition-colors flex items-center hover:shadow-md">
+              <i class="fa fa-file-excel-o mr-1"></i> 导出Excel
+            </button>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">保险险种</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">保险子险种</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">停约客户类型</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">停约客户编码</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">商家来源</th>
+              </tr>
+            </thead>
+            <tbody id="result-table" class="bg-white divide-y divide-gray-200">
+              <!-- 结果将动态插入这里 -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="empty-result" class="py-12 text-center hidden">
+          <i class="fa fa-search text-gray-300 text-5xl mb-4"></i>
+          <p class="text-gray-dark">未生成任何数据</p>
+          <p class="text-sm text-gray-medium mt-2">请输入商家ID和保险险种</p>
+        </div>
+        
+        <div id="result-summary" class="mt-4 text-sm text-gray-dark flex justify-between items-center">
+          <span>共生成 <span id="result-count">0</span> 条记录</span>
+          <span id="process-time" class="text-gray-medium"></span>
+        </div>
+      </div>
+
+      <!-- 提示区域 -->
+      <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg mb-8 animate-slide-up">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fa fa-info-circle text-primary"></i>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-dark">使用说明</h3>
+            <div class="mt-2 text-sm text-gray-dark">
+              <p>1. 在保险险种区域添加多个险种ID（点击"添加"按钮）</p>
+              <p>2. 在商家ID列表中粘贴所有商家ID（每行一个），也可以点击“提取商家ID”按钮从输入内容中提取</p>
+              <p>3. 系统会自动计算并显示预计生成的组合数</p>
+              <p>4. 点击"生成数据"按钮进行处理</p>
+              <p>5. 处理结果将显示在下方表格中，可以复制或导出为Excel文件</p>
+              <p class="mt-2 text-primary">输出格式说明：</p>
+              <ul class="list-disc pl-5 mt-1 space-y-1">
+                <li>保险险种：您输入的险种ID</li>
+                <li>保险子险种：空（留空）</li>
+                <li>停约客户类型：固定为"商家"</li>
+                <li>停约客户编码：您输入的商家ID</li>
+                <li>商家来源：固定为"京麦"</li>
+              </ul>
+              <p class="mt-2 text-primary">数据排序说明：</p>
+              <ul class="list-disc pl-5 mt-1 space-y-1">
+                <li>结果按保险险种ID排序，同一险种的所有商家ID连续排列</li>
+                <li>不同险种ID之间无分隔行，仅按数值顺序排列</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-gray-200 py-6">
+    <div class="container mx-auto px-4 text-center text-gray-dark text-sm">
+      <p>商家ID批量处理工具 &copy; 2025</p>
+      <p class="mt-1">高效、准确地生成保险数据</p>
+    </div>
+  </footer>
+
+  <!-- 成功提示 -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-success text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center z-50">
+    <i class="fa fa-check-circle mr-2"></i>
+    <span id="toast-message">操作成功</span>
+  </div>
+
+  <script>
+    // DOM元素
+    const shopIdsInput = document.getElementById('shop-ids');
+    const idCount = document.getElementById('id-count');
+    const insuranceContainer = document.getElementById('insurance-container');
+    const addInsuranceBtn = document.getElementById('add-insurance-btn');
+    const insuranceCount = document.getElementById('insurance-count');
+    const totalCount = document.getElementById('total-count');
+    const processBtn = document.getElementById('process-btn');
+    const resultSection = document.getElementById('result-section');
+    const resultTable = document.getElementById('result-table');
+    const resultCount = document.getElementById('result-count');
+    const processTime = document.getElementById('process-time');
+    const emptyResult = document.getElementById('empty-result');
+    const copyBtn = document.getElementById('copy-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    const themeToggle = document.getElementById('theme-toggle');
+    const resultSummary = document.getElementById('result-summary');
+    const clearBtn = document.getElementById('clear-btn');
+    const extractShopIdsBtn = document.getElementById('extract-shop-ids-btn');
+
+    // 商家ID计数
+    shopIdsInput.addEventListener('input', updateCounters);
+
+    // 添加保险险种按钮
+    addInsuranceBtn.addEventListener('click', () => {
+      const newItem = document.createElement('div');
+      newItem.className = 'insurance-item flex items-center animate-slide-up';
+      newItem.innerHTML = `
+        <input 
+          type="text" 
+          class="insurance-type flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 input-focus"
+          placeholder="请输入保险险种ID..."
+        >
+        <button class="remove-insurance ml-2 text-gray-dark hover:text-danger transition-colors">
+          <i class="fa fa-times-circle"></i>
+        </button>
+      `;
+      
+      insuranceContainer.appendChild(newItem);
+      
+      // 添加删除事件
+      newItem.querySelector('.remove-insurance').addEventListener('click', function() {
+        newItem.remove();
+        updateCounters();
+      });
+      
+      // 更新计数器
+      updateCounters();
+      
+      // 聚焦到新输入框
+      newItem.querySelector('input').focus();
+    });
+
+    // 清除按钮
+    clearBtn.addEventListener('click', () => {
+      // 清空商家ID
+      shopIdsInput.value = '';
+      
+      // 清空保险险种，保留一个空的
+      const firstInsurance = document.querySelector('.insurance-item');
+      insuranceContainer.innerHTML = '';
+      insuranceContainer.appendChild(firstInsurance);
+      firstInsurance.querySelector('input').value = '';
+      
+      // 更新计数器
+      updateCounters();
+      
+      // 隐藏结果区域
+      resultSection.classList.add('hidden');
+      
+      // 显示提示
+      showToast('已清除所有输入', 'success');
+    });
+
+    // 更新计数器
+    function updateCounters() {
+      // 商家ID计数
+      const shopIds = shopIdsInput.value.trim().split(/[\r\n]+/).filter(id => id.trim() !== '');
+      idCount.textContent = `${shopIds.length} 个商家ID`;
+      
+      // 保险险种计数
+      const insuranceItems = document.querySelectorAll('.insurance-type');
+      const validInsuranceItems = Array.from(insuranceItems).filter(input => input.value.trim() !== '');
+      insuranceCount.textContent = `${validInsuranceItems.length} 个保险险种`;
+      
+      // 计算总组合数
+      const total = shopIds.length * validInsuranceItems.length;
+      totalCount.textContent = total;
+      
+      // 更新删除按钮状态
+      updateRemoveButtons();
+    }
+
+    // 更新删除按钮状态
+    function updateRemoveButtons() {
+      const insuranceItems = document.querySelectorAll('.insurance-item');
+      
+      insuranceItems.forEach((item, index) => {
+        const removeBtn = item.querySelector('.remove-insurance');
+        
+        if (insuranceItems.length > 1) {
+          removeBtn.classList.remove('hidden');
+        } else {
+          removeBtn.classList.add('hidden');
+        }
+      });
+    }
+
+    // 监听保险险种输入变化
+    insuranceContainer.addEventListener('input', updateCounters);
+
+    // 处理按钮
+    processBtn.addEventListener('click', () => {
+      const startTime = performance.now();
+      
+      // 获取商家ID
+      const shopIds = shopIdsInput.value.trim().split(/[\r\n]+/).filter(id => id.trim() !== '');
+      
+      // 获取保险险种
+      const insuranceItems = document.querySelectorAll('.insurance-type');
+      const insuranceTypes = Array.from(insuranceItems)
+        .map(input => input.value.trim())
+        .filter(value => value !== '');
+      
+      // 验证输入
+      if (shopIds.length === 0) {
+        showToast('请输入商家ID', 'warning');
+        return;
+      }
+      
+      if (insuranceTypes.length === 0) {
+        showToast('请输入保险险种', 'warning');
+        return;
+      }
+      
+      try {
+        // 生成组合结果 - 按保险险种分组
+        const results = [];
+        
+        insuranceTypes.forEach(insuranceType => {
+          shopIds.forEach(shopId => {
+            results.push({
+              insuranceType: insuranceType,
+              subInsuranceType: '',
+              customerType: '商家',
+              customerCode: shopId,
+              source: '京麦'
+            });
+          });
+        });
+        
+        // 渲染结果
+        renderResults(results);
+        
+        const endTime = performance.now();
+        const timeTaken = Math.round(endTime - startTime);
+        processTime.textContent = `处理时间: ${timeTaken}ms`;
+        
+        resultSection.classList.remove('hidden');
+        
+        // 滚动到结果区域
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        console.error('处理过程出错:', error);
+        showToast('处理过程出错，请重试', 'error');
+      }
+    });
+
+    // 复制结果按钮
+    copyBtn.addEventListener('click', () => {
+      const rows = resultTable.querySelectorAll('tr');
+      let text = '保险险种\t保险子险种\t停约客户类型\t停约客户编码\t商家来源\n';
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+          text += `${cells[0].textContent}\t${cells[1].textContent}\t${cells[2].textContent}\t${cells[3].textContent}\t${cells[4].textContent}\n`;
+        }
+      });
+      
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('结果已复制到剪贴板', 'success');
+      }).catch(err => {
+        showToast('复制失败，请重试', 'error');
+        console.error('复制失败: ', err);
+      });
+    });
+
+    // 导出Excel按钮
+    downloadBtn.addEventListener('click', () => {
+      const rows = resultTable.querySelectorAll('tr');
+      const data = [];
+      
+      // 添加表头
+      data.push(['保险险种', '保险子险种', '停约客户类型', '停约客户编码', '商家来源']);
+      
+      // 添加数据行
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 0) {
+          data.push([
+            cells[0].textContent, 
+            cells[1].textContent, 
+            cells[2].textContent, 
+            cells[3].textContent, 
+            cells[4].textContent
+          ]);
+        }
+      });
+      
+      try {
+        // 创建工作簿
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "商家数据");
+        
+        // 设置列宽
+        const wscols = [
+          {wch: 12},  // 保险险种列宽
+          {wch: 12},  // 保险子险种列宽
+          {wch: 12},  // 停约客户类型列宽
+          {wch: 16},  // 停约客户编码列宽
+          {wch: 12}   // 商家来源列宽
+        ];
+        ws['!cols'] = wscols;
+        
+        // 导出Excel文件
+        XLSX.writeFile(wb, `商家数据_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast('Excel文件已下载', 'success');
+      } catch (error) {
+        console.error('导出Excel出错:', error);
+        showToast('导出Excel失败，请重试', 'error');
+      }
+    });
+
+    // 显示提示消息
+    function showToast(message, type = 'success') {
+      toastMessage.textContent = message;
+      
+      // 设置提示类型样式
+      if (type === 'success') {
+        toast.classList.remove('bg-danger', 'bg-warning');
+        toast.classList.add('bg-success');
+      } else if (type === 'error') {
+        toast.classList.remove('bg-success', 'bg-warning');
+        toast.classList.add('bg-danger');
+      } else if (type === 'warning') {
+        toast.classList.remove('bg-success', 'bg-danger');
+        toast.classList.add('bg-warning');
+      }
+      
+      // 显示提示
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      
+      // 3秒后隐藏提示
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // 渲染结果表格
+    function renderResults(results) {
+      resultTable.innerHTML = '';
+      
+      if (results.length === 0) {
+        emptyResult.classList.remove('hidden');
+        resultSummary.classList.add('hidden');
+        return;
+      }
+      
+      emptyResult.classList.add('hidden');
+      resultSummary.classList.remove('hidden');
+      resultCount.textContent = results.length;
+      
+      results.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">${item.insuranceType}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200 bg-gray-50"></td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.customerType}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark">${item.customerCode}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.source}</td>
+        `;
+        
+        resultTable.appendChild(row);
+      });
+    }
+
+    // 主题切换功能
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      
+      if (isDark) {
+        document.body.classList.add('bg-gray-900', 'text-white');
+        document.body.classList.remove('bg-gray-50', 'text-dark');
+        themeToggle.innerHTML = '<i class="fa fa-sun-o text-yellow-400"></i>';
+        document.querySelector('header').classList.remove('gradient-bg');
+        document.querySelector('header').classList.add('bg-gray-800');
+      } else {
+        document.body.classList.remove('bg-gray-900', 'text-white');
+        document.body.classList.add('bg-gray-50', 'text-dark');
+        themeToggle.innerHTML = '<i class="fa fa-moon-o text-gray-dark"></i>';
+        document.querySelector('header').classList.add('gradient-bg');
+        document.querySelector('header').classList.remove('bg-gray-800');
+      }
+    });
+
+    // 提取商家ID按钮
+    extractShopIdsBtn.addEventListener('click', () => {
+      const inputText = shopIdsInput.value;
+      
+      // 匹配所有连续数字
+      const allNumbers = inputText.match(/\d+/g) || [];
+      
+      // 过滤掉可能是"店铺ID+数字"的情况
+      const validShopIds = allNumbers.filter((id, index, array) => {
+        // 如果当前ID后面还有ID，并且长度小于等于4（可能是店铺ID）
+        // 同时下一个ID长度大于4（可能是店铺ID后面的数字），则排除当前ID
+        if (index < array.length - 1 && id.length <= 4 && array[index + 1].length > 4) {
+          return false;
+        }
+        
+        // 排除长度过短的ID（可根据实际情况调整）
+        return id.length > 2;
+      });
+      
+      shopIdsInput.value = validShopIds.join('\n');
+      updateCounters();
+      showToast('商家ID提取成功', 'success');
+    });
+
+    // 初始化
+    updateCounters();
+  </script>
+</body>
+</html>
