@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单商品整体对比工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 25px 0;
+            margin-bottom: 25px;
+            background: linear-gradient(90deg, #1a6dcc, #0d4b9e);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e0e6ed;
+        }
+        
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f4f8;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            font-size: 1.3rem;
+        }
+        
+        .input-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .input-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 280px;
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 15px;
+            resize: vertical;
+            line-height: 1.6;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+            gap: 20px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        #compareBtn {
+            background: linear-gradient(90deg, #1a6dcc, #0d4b9e);
+            color: white;
+        }
+        
+        #compareBtn:hover {
+            background: linear-gradient(90deg, #0d5cbf, #0a3d8c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(26, 109, 204, 0.25);
+        }
+        
+        #clearBtn {
+            background: linear-gradient(90deg, #6c757d, #495057);
+            color: white;
+        }
+        
+        #clearBtn:hover {
+            background: linear-gradient(90deg, #5a6268, #343a40);
+            transform: translateY(-2px);
+        }
+        
+        .comparison-result {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .result-header {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .match {
+            background: linear-gradient(90deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .mismatch {
+            background: linear-gradient(90deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .comparison-table {
+            margin-top: 25px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        th {
+            background: linear-gradient(90deg, #1a6dcc, #0d4b9e);
+            color: white;
+            text-align: left;
+            padding: 18px 20px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        
+        tr.item-row:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .match-row {
+            background-color: #e8f5e9 !important;
+        }
+        
+        .mismatch-row {
+            background-color: #ffebee !important;
+        }
+        
+        .highlight {
+            font-weight: 600;
+            color: #1a6dcc;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.95rem;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        @media (max-width: 768px) {
+            .input-area {
+                flex-direction: column;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>订单商品整体对比工具</h1>
+            <p>将商品编码和数量作为整体项目进行精确对比</p>
+        </header>
+        
+        <div class="card">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1H.5zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM9 5.5V7h1.5a.5.5 0 0 1 0 1H9v1.5a.5.5 0 0 1-1 0V8H6.5a.5.5 0 0 1 0-1H8V5.5a.5.5 0 0 1 1 0z"/>
+                </svg>
+                订单信息输入
+            </h2>
+            <div class="input-area">
+                <div class="input-section">
+                    <label for="orderData1">原单信息：</label>
+                    <textarea id="orderData1">订单详细信息    机构：POP机构    订单编号：320519276684
+
+商品编号	商品名称	京东价	赠送京豆	商品数量	库存状态	类目运营(采销)	小计
+10100042650591
+雷蛇（Razer）毒蝰v3pro专业版 轻量化无线游戏鼠标 人体工程学设计宏电竞鼠标 lol吃鸡CSGO瓦罗兰特鼠标[商品快照]
+¥1299.00	0	1	现货	运营: 李奕龙/liyilong27(3C数码事业群)	¥1299.00
+10100042650592
+罗技G PRO X SUPERLIGHT无线游戏鼠标
+¥999.00	0	1	现货	运营: 张明/zhangming(3C数码事业群)	¥999.00
+商品金额：¥2298.00元</textarea>
+                </div>
+                
+                <div class="input-section">
+                    <label for="orderData2">比价单信息：</label>
+                    <textarea id="orderData2">订单详细信息    机构：POP机构    订单编号：320519276685
+
+商品编号	商品名称	京东价	赠送京豆	商品数量	库存状态	类目运营(采销)	小计
+10100042650591
+雷蛇（Razer）毒蝰v3pro专业版 轻量化无线游戏鼠标 人体工程学设计宏电竞鼠标 lol吃鸡CSGO瓦罗兰特鼠标[商品快照]
+¥1299.00	0	2	现货	运营: 李奕龙/liyilong27(3C数码事业群)	¥2598.00
+20200042650593
+Keychron K3 超薄机械键盘
+¥699.00	0	1	现货	运营: 王华/wanghua(3C数码事业群)	¥699.00
+商品金额：¥3297.00元</textarea>
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button id="compareBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path fill-rule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1-.5-.5v-7A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    对比商品整体信息
+                </button>
+                <button id="clearBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                    清空内容
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+                    <path d="M8 4a.5.5 0 0 1 .5.5V6H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V7H6a.5.5 0 0 1 0-1h1.5V4.5A.5.5 0 0 1 8 4zm-2.5 6.5A.5.5 0 0 1 6 10h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                整体对比结果
+            </h2>
+            <div class="comparison-result">
+                <div class="result-header" id="resultHeader">
+                    请点击"对比商品整体信息"按钮查看结果
+                </div>
+                <div class="comparison-table">
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>商品整体项目</th>
+                                <th>原单中是否存在</th>
+                                <th>比价单中是否存在</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" style="text-align: center;">暂无对比数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 订单商品整体对比工具 | 数据安全处理 | 仅限工作业务用途</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const compareBtn = document.getElementById('compareBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const orderData1 = document.getElementById('orderData1');
+            const orderData2 = document.getElementById('orderData2');
+            const comparisonTable = document.querySelector('#comparisonTable tbody');
+            const resultHeader = document.getElementById('resultHeader');
+            
+            // 初始提取
+            compareProducts();
+            
+            // 对比按钮事件
+            compareBtn.addEventListener('click', compareProducts);
+            
+            // 清空按钮事件
+            clearBtn.addEventListener('click', function() {
+                orderData1.value = '';
+                orderData2.value = '';
+                clearResults();
+            });
+            
+            function compareProducts() {
+                const order1Data = orderData1.value;
+                const order2Data = orderData2.value;
+                
+                // 提取两个订单的商品信息
+                const products1 = extractProductInfo(order1Data);
+                const products2 = extractProductInfo(order2Data);
+                
+                // 显示对比结果
+                displayComparison(products1, products2);
+            }
+            
+            function extractProductInfo(orderData) {
+                const products = [];
+                if (!orderData.trim()) return products;
+                
+                const lines = orderData.split('\n');
+                
+                // 查找商品信息部分
+                let inProductSection = false;
+                let currentProduct = null;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // 检测商品部分开始
+                    if (line.includes('商品编号') && line.includes('商品名称')) {
+                        inProductSection = true;
+                        continue;
+                    }
+                    
+                    // 商品部分结束
+                    if (inProductSection && line.includes('商品金额')) {
+                        inProductSection = false;
+                        continue;
+                    }
+                    
+                    if (inProductSection) {
+                        // 商品编号行 (纯数字)
+                        if (/^\d{10,}$/.test(line)) {
+                            if (currentProduct) {
+                                products.push(currentProduct);
+                            }
+                            currentProduct = { id: line, quantity: '1' };
+                        } 
+                        // 商品详情行 (包含数量信息)
+                        else if (currentProduct && line.includes('¥')) {
+                            // 使用正则表达式提取数量
+                            const quantityMatch = line.match(/(\d+)\s+现货/);
+                            if (quantityMatch) {
+                                currentProduct.quantity = quantityMatch[1];
+                            }
+                            // 备用方法：按制表符分割（如果正则匹配失败）
+                            else {
+                                const details = line.split('\t');
+                                if (details.length >= 5) {
+                                    currentProduct.quantity = details[4].trim();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 添加最后一个商品
+                if (currentProduct) {
+                    products.push(currentProduct);
+                }
+                
+                return products;
+            }
+            
+            function displayComparison(products1, products2) {
+                // 清空现有结果
+                comparisonTable.innerHTML = '';
+                
+                if (products1.length === 0 && products2.length === 0) {
+                    comparisonTable.innerHTML = '<tr><td colspan="4">未找到可对比的商品信息</td></tr>';
+                    resultHeader.textContent = "未找到可对比的商品信息";
+                    resultHeader.className = "result-header";
+                    return;
+                }
+                
+                // 创建商品整体项目（编码+数量）
+                const items1 = products1.map(p => `${p.id}:${p.quantity}`);
+                const items2 = products2.map(p => `${p.id}:${p.quantity}`);
+                
+                // 获取所有唯一的商品整体项目
+                const allItems = [...new Set([...items1, ...items2])];
+                
+                // 检查整体是否一致
+                const isMatch = allItems.every(item => 
+                    items1.includes(item) === items2.includes(item)
+                );
+                
+                // 更新结果标题
+                if (isMatch) {
+                    resultHeader.textContent = "✅ 两个订单的sku和数量完全一致";
+                    resultHeader.className = "result-header match";
+                } else {
+                    resultHeader.textContent = "❌ 两个订单的sku和数量存在差异";
+                    resultHeader.className = "result-header mismatch";
+                }
+                
+                // 添加对比行
+                allItems.forEach(item => {
+                    const [id, quantity] = item.split(':');
+                    const inOrder1 = items1.includes(item);
+                    const inOrder2 = items2.includes(item);
+                    const match = inOrder1 && inOrder2;
+                    
+                    const row = document.createElement('tr');
+                    row.className = "item-row";
+                    
+                    row.innerHTML = `
+                        <td class="highlight">${id} (数量: ${quantity})</td>
+                        <td>${inOrder1 ? '✓ 存在' : '✗ 不存在'}</td>
+                        <td>${inOrder2 ? '✓ 存在' : '✗ 不存在'}</td>
+                        <td>${match ? '<span style="color: #28a745; font-weight: 600;">一致</span>' : '<span style="color: #dc3545; font-weight: 600;">不一致</span>'}</td>
+                    `;
+                    
+                    if (!match) {
+                        row.classList.add('mismatch-row');
+                    } else {
+                        row.classList.add('match-row');
+                    }
+                    
+                    comparisonTable.appendChild(row);
+                });
+            }
+            
+            function clearResults() {
+                comparisonTable.innerHTML = '<tr><td colspan="4">暂无对比数据</td></tr>';
+                resultHeader.textContent = "请点击\"对比商品整体信息\"按钮查看结果";
+                resultHeader.className = "result-header";
+            }
+        });
+    </script>
+</body>
+</html>
